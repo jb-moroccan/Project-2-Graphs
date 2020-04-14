@@ -1,12 +1,13 @@
 import random
 import sys
 import math
+import collections
 
 class Node:
   def __init__(self, val):
     self.val = val
     self.visited = False
-    self.nodes = []
+    self.neighbors = []
 
 class DirectedGraph:
   def __init__(self):
@@ -29,18 +30,18 @@ class DirectedGraph:
       return
     else:
       try:
-        if second not in self.allNodes[self.allNodes.index(first)].nodes:
-          self.allNodes[self.allNodes.index(first)].nodes.append(second)
+        if second not in self.allNodes[self.allNodes.index(first)].neighbors:
+          self.allNodes[self.allNodes.index(first)].neighbors.append(second)
       except ValueError:
         return
 
-  def removeUndirectedEdge(self, first, second):
+  def removeDirectedEdge(self, first, second):
     if first == None or second == None:
       return
 
     idx2 = -1
     count = 0
-    for node in self.allNodes[self.allNodes.index(first)].nodes:
+    for node in self.allNodes[self.allNodes.index(first)].neighbors:
       if node.val == second.val:
         idx2 = count
         break
@@ -48,7 +49,7 @@ class DirectedGraph:
     if idx2 == -1:
       return
     try:
-      self.allNodes[self.allNodes.index(first)].nodes.pop(idx2)
+      self.allNodes[self.allNodes.index(first)].neighbors.pop(idx2)
     except ValueError:
       return
 
@@ -75,20 +76,17 @@ class TopSort:
   def Kahns(graph):
     inDegree = TopSort.initializeInDegreeMap(g)
     topSort = []
-    queueInDegree0 = TopSort.addNodesWithoutDependenciesToQueue(inDegree, [])
+    queueInDegree0 = TopSort.addNodesWithoutDependenciesToQueue(inDegree, collections.deque())
 
     while len(queueInDegree0) > 0:
       currNode = queueInDegree0[0]
       topSort.append(currNode)
-
-      for node in g.allNodes:
-        if node == currNode:
-          for neighbor in node.nodes:
-            inDegree[neighbor] -= 1
-            if inDegree[neighbor] == 0:
-              queueInDegree0.append(neighbor)
-          queueInDegree0.pop(0)
-          break
+      
+      for neighbor in g.nodeMap[currNode.val].neighbors:
+        inDegree[neighbor] -= 1
+        if inDegree[neighbor] == 0:
+          queueInDegree0.append(neighbor)
+      queueInDegree0.popleft()
 
     return topSort
 
@@ -98,7 +96,7 @@ class TopSort:
       inDegree[node] = 0
 
     for node in g.allNodes:
-      for neighbor in node.nodes:
+      for neighbor in node.neighbors:
         inDegree[neighbor] += 1
     
     return inDegree
@@ -124,17 +122,36 @@ class TopSort:
   
   def mDFSHelper(node, stack):
     node.visited = True
-    for neighbor in node.nodes:
+    for neighbor in node.neighbors:
       if neighbor.visited != True:
         TopSort.mDFSHelper(neighbor, stack) 
     stack.append(node)
-  
-g = createRandomDAGIter(1000)
+
+g = DirectedGraph()
+for i in range(16):
+  g.addNode(i)
+
+g.addDirectedEdge(g.getNode(0),g.getNode(4))
+g.addDirectedEdge(g.getNode(0),g.getNode(1))
+g.addDirectedEdge(g.getNode(1),g.getNode(2))
+g.addDirectedEdge(g.getNode(2),g.getNode(6))
+g.addDirectedEdge(g.getNode(3),g.getNode(7))
+g.addDirectedEdge(g.getNode(0),g.getNode(4))
+g.addDirectedEdge(g.getNode(4),g.getNode(5))
+g.addDirectedEdge(g.getNode(4),g.getNode(8))
+g.addDirectedEdge(g.getNode(5),g.getNode(6))
+g.addDirectedEdge(g.getNode(5),g.getNode(9))
+g.addDirectedEdge(g.getNode(6),g.getNode(10))
+g.addDirectedEdge(g.getNode(7),g.getNode(11))
+g.addDirectedEdge(g.getNode(8),g.getNode(12))
+g.addDirectedEdge(g.getNode(9),g.getNode(13))
+g.addDirectedEdge(g.getNode(11),g.getNode(15))
+g.addDirectedEdge(g.getNode(13),g.getNode(14))
 
 nodes = g.getAllNodes()
 for val, node in nodes.items():
   print(val)
-  for neighbor in node.nodes:
+  for neighbor in node.neighbors:
     print("edge", neighbor.val)
 
 out = TopSort.mDFS(g)
